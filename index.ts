@@ -14,7 +14,7 @@ const path: (...args: string[]) => MethodDecorator = function(...args) {
   return (target, propertyKey, descriptor) => {
     const p = generateProxy(target, propertyKey, [...args], [], args.join(""));
     const resolver_proxies: Map<string, any> = (target as any)[Symbol.for('resolver_proxies')] ?? new Map();
-    resolver_proxies.set(args.join(""), p);
+    resolver_proxies.set([...args, "handler"].join(""), p);
     (target as any)[Symbol.for('resolver_proxies')] = resolver_proxies;
     return descriptor 
   }
@@ -24,7 +24,7 @@ class Example {
   resolvers: (searcheed: string[]) => any = (searched = []) => new Proxy(this, {
       get: (target, handler) => {
         let proxies = this.proxies();
-        
+       console.log([...searched, handler.toString()].join("")) 
         if (proxies.has([...searched, handler.toString()].join(""))) {
           return proxies.get([...searched, handler.toString()].join(""))[handler]
         }
@@ -42,9 +42,14 @@ class Example {
   test2() {
     return 'test2'
   }
+  @path("div", "div", "div")
+  test3() {
+    return 'test3'
+  }
 }
 
 const instance = new Example() as any
-console.log('Example', instance.resolvers().div.div())
+console.log('Example', instance.resolvers().div.div.handler())
 // console.log('Example', instance.resolvers().div.div.div.div)
-console.log('Example', instance.resolvers().h1.div.span())
+console.log('Example', instance.resolvers().h1.div.span.handler())
+console.log('Example', instance.resolvers().div.div.div.handler())
